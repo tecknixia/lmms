@@ -775,8 +775,10 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 			// DRAW & mouseDownRight & not m_mouseDownLeft & Y>TOP_MARGIN
 			if (m_mouseDownRight && !m_mouseDownLeft)
 			{
-				m_drawLastTick = pos_ticks;
-				//m_pattern->addJournalCheckPoint();
+				if(pos_ticks < 0)
+				{
+					pos_ticks = 0;
+				}
 				// removing automation point
 				removePoints(m_drawLastTick, pos_ticks);
 				Engine::getSong()->setModified();
