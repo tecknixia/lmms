@@ -98,7 +98,8 @@ AutomationEditor::AutomationEditor() :
 	m_y_delta( DEFAULT_Y_DELTA ),
 	m_y_auto( true ),
 	m_editMode( DRAW ),
-	m_mouseDownRight( false ),
+	m_mouseDownRight(false),
+	m_mouseDownLeft(false),
 	m_scrollBack( false ),
 	m_barLineColor( 0, 0, 0 ),
 	m_beatLineColor( 0, 0, 0 ),
@@ -503,6 +504,18 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 	{
 		return;
 	}
+
+	if( mouseEvent->button() == Qt::RightButton )
+	{
+		m_mouseDownRight = true;
+	}
+
+	// left button??
+	if (mouseEvent->button() == Qt::LeftButton)
+	{
+		m_mouseDownLeft = true;
+	}
+
 	if( mouseEvent->y() > TOP_MARGIN )
 	{
 		float level = getLevel( mouseEvent->y() );
@@ -540,14 +553,8 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 				++it;
 			}
 
-			if( mouseEvent->button() == Qt::RightButton )
-			{
-				m_mouseDownRight = true;
-			}
 
-			// left button??
-			if( mouseEvent->button() == Qt::LeftButton &&
-							m_editMode == DRAW )
+			if(m_mouseDownLeft && m_editMode == DRAW)
 			{
 				m_pattern->addJournalCheckPoint();
 				// Connect the dots
@@ -562,6 +569,8 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 
 				// did it reach end of map because
 				// there's no value??
+
+				// The loop is checking if the mouse is on a tick in the map
 				if( it == time_map.end() )
 				{
 					// then set new value
@@ -592,9 +601,11 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 
 				Engine::getSong()->setModified();
 			}
-			else if( ( mouseEvent->button() == Qt::RightButton &&
-							m_editMode == DRAW ) ||
-					m_editMode == ERASE )
+			// Mouse left btn mouse right btn and DRAW,
+			// or mouse left and ERASE
+			else if(
+				(m_mouseDownLeft && m_mouseDownRight &&	m_editMode == DRAW)
+				|| m_editMode == ERASE)
 			{
 				m_drawLastTick = pos_ticks;
 				m_pattern->addJournalCheckPoint();
@@ -606,8 +617,8 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 				}
 				m_action = NONE;
 			}
-			else if( mouseEvent->button() == Qt::LeftButton &&
-							m_editMode == SELECT )
+			// Mouse left button and SELECT
+			else if(m_mouseDownLeft && m_editMode == SELECT)
 			{
 				// select an area of values
 
@@ -617,15 +628,15 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 				m_selectedLevels = 1;
 				m_action = SELECT_VALUES;
 			}
-			else if( mouseEvent->button() == Qt::RightButton &&
-							m_editMode == SELECT )
+			// Mouse left button, mouse right button, and SELECT
+			else if(m_mouseDownLeft && m_mouseDownRight && m_editMode == SELECT)
 			{
 				// when clicking right in select-move, we
 				// switch to move-mode
 				//m_moveButton->setChecked( true );
 			}
-			else if( mouseEvent->button() == Qt::LeftButton &&
-							m_editMode == MOVE )
+			// Mouse left button and MOVE
+			else if(m_mouseDownLeft && m_editMode == MOVE)
 			{
 				m_pattern->addJournalCheckPoint();
 				// move selection (including selected values)
@@ -638,14 +649,14 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 
 				Engine::getSong()->setModified();
 			}
-			else if( mouseEvent->button() == Qt::RightButton &&
-							m_editMode == MOVE )
+			// Mouse Left button, mouse right button, and MOVE
+			else if(m_mouseDownLeft && m_mouseDownRight
+				&& m_editMode == MOVE)
 			{
 				// when clicking right in select-move, we
 				// switch to draw-mode
 				//m_drawButton->setChecked( true );
 			}
-
 			update();
 		}
 	}
@@ -666,10 +677,13 @@ void AutomationEditor::mouseReleaseEvent(QMouseEvent * mouseEvent )
 
 	if( mouseEvent->button() == Qt::LeftButton )
 	{
+		m_mouseDownLeft = false;
 		mustRepaint = true;
 	}
 
-	if( m_editMode == DRAW )
+	// is this redrawing the points on the map as they're being deleted?
+	// put under left button release ?
+	if(m_editMode == DRAW)
 	{
 		if( m_action == MOVE_VALUE )
 		{
@@ -744,7 +758,7 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 		int pos_ticks = x * MidiTime::ticksPerTact() / m_ppt +
 							m_currentPosition;
 
-		if( mouseEvent->buttons() & Qt::LeftButton && m_editMode == DRAW )
+		if(m_mouseDownLeft && m_editMode == DRAW)
 		{
 			if( m_action == MOVE_VALUE )
 			{
@@ -772,22 +786,19 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 			Engine::getSong()->setModified();
 
 		}
-		else if( ( mouseEvent->buttons() & Qt::RightButton &&
-						m_editMode == DRAW ) ||
-				( mouseEvent->buttons() & Qt::LeftButton &&
-						m_editMode == ERASE ) )
+		else if((m_mouseDownRight && m_editMode == DRAW)
+			|| (m_mouseDownLeft && m_editMode == ERASE))
 		{
 			// removing automation point
 			if( pos_ticks < 0 )
 			{
 				pos_ticks = 0;
 			}
-			removePoints( m_drawLastTick, pos_ticks );
+			removePoints(m_drawLastTick, pos_ticks);
 			Engine::getSong()->setModified();
 		}
-		else if( mouseEvent->buttons() & Qt::LeftButton &&
-						m_editMode == SELECT &&
-						m_action == SELECT_VALUES )
+		else if(m_mouseDownLeft && m_editMode == SELECT
+			&& m_action == SELECT_VALUES)
 		{
 
 			// change size of selection
@@ -831,8 +842,7 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 				--m_selectedLevels;
 			}
 		}
-		else if( mouseEvent->buttons() & Qt::LeftButton &&
-					m_editMode == MOVE &&
+		else if(m_mouseDownLeft && m_editMode == MOVE &&
 					m_action == MOVE_SELECTION )
 		{
 			// move selection + selected values
@@ -1008,9 +1018,8 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 	}
 	else
 	{
-		if( mouseEvent->buttons() & Qt::LeftButton &&
-					m_editMode == SELECT &&
-					m_action == SELECT_VALUES )
+		if(m_mouseDownLeft &&	m_editMode == SELECT
+			&& m_action == SELECT_VALUES )
 		{
 			int x = mouseEvent->x() - VALUES_WIDTH;
 			if( x < 0 && m_currentPosition > 0 )
