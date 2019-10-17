@@ -613,13 +613,15 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 				(m_mouseDownLeft && m_mouseDownRight &&	m_editMode == DRAW)
 				|| m_editMode == ERASE)
 			{
-			//
-			m_drawLastTick = pos_ticks;
-			m_pattern->addJournalCheckPoint();
-			// erase single value
-			m_pattern->removeValue( it.key() );
-			Engine::getSong()->setModified();
-			m_action = NONE;
+				m_drawLastTick = pos_ticks;
+				m_pattern->addJournalCheckPoint();
+				// erase single value
+				if( it != time_map.end() )
+				{
+					m_pattern->removeValue( it.key() );
+					Engine::getSong()->setModified();
+				}
+				m_action = NONE;			
 			}
 			// Mouse left button and SELECT
 			else if(m_mouseDownLeft && m_editMode == SELECT)
