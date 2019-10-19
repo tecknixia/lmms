@@ -649,20 +649,16 @@ void AutomationEditor::mousePressEvent(QMouseEvent* mouseEvent)
 					m_selectedLevels = 1;
 					m_action = SELECT_VALUES;
 				}
-/*
+
 				if(m_mouseDownRight && !m_mouseDownLeft)
 				{
 					// when clicking right in select-mode, we
 					// switch to move-mode
-
-					//m_editMode = MOVE;
-					//moveAction->setChecked(true);
-
-					// Was trying follow the above comment,
-					// but this de-selects the selection and
-					// the moveAction QAction is out of scope?
+					setEditMode(MOVE);
+					// the moveAction QAction is out of scope
+					// moveAction->setChecked(true);
+					// so how to switch the button?
 				}
-*/
 			} // SELECT & X>=VALUES_WIDTH & below toolbar
 
 			else if (m_editMode == MOVE) // & X>=VALUES_WIDTH & below toolbar
@@ -677,14 +673,14 @@ void AutomationEditor::mousePressEvent(QMouseEvent* mouseEvent)
 					m_action = MOVE_SELECTION;
 
 					Engine::getSong()->setModified();
-/*
+
 					if (m_mouseDownRight) // & mouseDownLeft & MOVE
 					{
 						// when clicking right in move-mode, we
 						// switch to draw-mode
+						setEditMode(DRAW);
 						// m_drawButton->setChecked( true );
 					}
-*/
 				} // mouseDownLeft & MOVE & X>=VALUES_WIDTH & below toolbar
 			} // MOVE & X>=VALUES_WIDTH & below toolbar
 
