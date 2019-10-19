@@ -1526,6 +1526,7 @@ void AutomationEditor::paintEvent(QPaintEvent * pe )
 		/// \todo move this horizontal line drawing code into the same loop as the value ticks?
 		if( m_y_auto )
 		{
+
 			QPen pen( beatLineColor() );
 			pen.setStyle( Qt::DotLine );
 			p.setPen( pen );
@@ -1744,8 +1745,14 @@ void AutomationEditor::paintEvent(QPaintEvent * pe )
 								* m_y_delta );
 		h = (int)( ( selLevel_start - selLevel_end ) * m_y_delta );
 	}
-	p.setPen( QColor( 0, 64, 192 ) );
-	p.drawRect( x + VALUES_WIDTH, y, w, h );
+
+	// sets color for selection box
+	//p.setPen( QColor( 0, 64, 192 ) );
+	// testing -- THAT'S IT! -- THAT'S DRAWING THE SELECTION BOX!
+	// I have NO idea where the fill color came from though
+	//p.drawRect( x + VALUES_WIDTH, y, w, h );
+	p.fillRect( x + VALUES_WIDTH, y, w, h, QColor( 208, 115, 254, 48 ));
+
 
 	// TODO: Get this out of paint event
 	int l = validPattern() ? (int) m_pattern->length() : 0;
