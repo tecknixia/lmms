@@ -525,6 +525,7 @@ void AutomationEditor::mousePressEvent(QMouseEvent* mouseEvent)
 		m_mouseDownLeft = true;
 	}
 
+	// if mouse cursor is below toolbar
 	if (mouseEvent->y() > TOP_MARGIN)
 	{
 		float mouseLevel = getLevel(mouseEvent->y());
@@ -621,9 +622,9 @@ void AutomationEditor::mousePressEvent(QMouseEvent* mouseEvent)
 
 						Engine::getSong()->setModified();
 					} // if (mouseDownRight) else: mouseDownLeft & DRAW
-				} // mouseDownLeft & DRAW & X>=VALUES_WIDTH & Y>TOP_MARGIN
+				} // mouseDownLeft & DRAW & X>=VALUES_WIDTH & below toolbar
 
-				else if (m_mouseDownRight) // & DRAW & X>=VALUES_WIDTH & Y>TOP_MARGIN
+				else if (m_mouseDownRight) // & DRAW & X>=VALUES_WIDTH & below toolbar
 				{
 					m_drawLastTick = pos_ticks;
 					m_pattern->addJournalCheckPoint();
@@ -635,9 +636,9 @@ void AutomationEditor::mousePressEvent(QMouseEvent* mouseEvent)
 					}
 					m_action = NONE;
 				}
-			} // DRAW & X>=VALUES_WIDTH & Y>TOP_MARGIN
+			} // DRAW & X>=VALUES_WIDTH & below toolbar
 
-			else if (m_editMode == SELECT) // & X>=VALUES_WIDTH & Y>TOP_MARGIN
+			else if (m_editMode == SELECT) // & X>=VALUES_WIDTH & below toolbar
 			{
 				if (m_mouseDownLeft)
 				{
@@ -662,9 +663,9 @@ void AutomationEditor::mousePressEvent(QMouseEvent* mouseEvent)
 					// the moveAction QAction is out of scope?
 				}
 */
-			} // SELECT & X>=VALUES_WIDTH & Y>TOP_MARGIN
+			} // SELECT & X>=VALUES_WIDTH & below toolbar
 
-			else if (m_editMode == MOVE) // & X>=VALUES_WIDTH & Y>TOP_MARGIN
+			else if (m_editMode == MOVE) // & X>=VALUES_WIDTH & below toolbar
 			{
 				if (m_mouseDownLeft)
 				{
@@ -683,11 +684,11 @@ void AutomationEditor::mousePressEvent(QMouseEvent* mouseEvent)
 						// switch to draw-mode
 						// m_drawButton->setChecked( true );
 					}
-*/					
-				} // mouseDownLeft & MOVE & X>=VALUES_WIDTH & Y>TOP_MARGIN
-			} // MOVE & X>=VALUES_WIDTH & Y>TOP_MARGIN
+*/
+				} // mouseDownLeft & MOVE & X>=VALUES_WIDTH & below toolbar
+			} // MOVE & X>=VALUES_WIDTH & below toolbar
 
-			else if (m_editMode == ERASE) // & X>=VALUES_WIDTH & Y>TOP_MARGIN
+			else if (m_editMode == ERASE) // & X>=VALUES_WIDTH & below toolbar
 			{
 				if (m_mouseDownLeft)
 				{
@@ -707,12 +708,12 @@ void AutomationEditor::mousePressEvent(QMouseEvent* mouseEvent)
 						}
 						m_action = NONE;
 					}
-				} // m_mouseDownLeft & ERASE & X>=VALUES_WIDTH & Y>TOP_MARGIN
-			} // ERASE & X>=VALUES_WIDTH & Y>TOP_MARGIN
+				} // m_mouseDownLeft & ERASE & X>=VALUES_WIDTH & below toolbar
+			} // ERASE & X>=VALUES_WIDTH & below toolbar
 
 			update();
-		} // X>=VALUES_WIDTH & Y>TOP_MARGIN
-	} // mouseEvent->y is greater than TOP_MARGIN
+		} // X>=VALUES_WIDTH & below toolbar
+	} // mouse cursor is below toolbar
 } // mousePressEvent
 
 
@@ -800,7 +801,8 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 
 	float mouseLevel = getLevel(mouseEvent->y());
 
-	if(mouseEvent->y() > TOP_MARGIN)
+	// if mouse cursor is within the editing area
+	if(mouseEvent->y() > TOP_MARGIN && mouseEvent->y() < (height() - SCROLLBAR_SIZE))
 	{
 		float maxLvlFraction = m_pattern->firstObject()->maxValue<float>() * 0.05;
 		int x = mouseEvent->x();
@@ -870,14 +872,10 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 				QApplication::restoreOverrideCursor();
 			}
 			// sets drawCross tooltip back to mouse y position
-			//if (mouseEvent->timestamp() > m_pointYLevelTimestamp)
-			if(it == time_map.end())
-			{
-				m_pointYLevel = 0;
-			}
+			if (it == time_map.end()) { m_pointYLevel = 0; }
 		}
 
-		if(m_editMode == DRAW) // & Y>TOP_MARGIN
+		if(m_editMode == DRAW) // & within edit area
 		{
 			if (m_mouseDownLeft && !m_mouseDownRight)
 			{
@@ -898,10 +896,10 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 						& Qt::ControlModifier);
 
 					Engine::getSong()->setModified();
-				} // MOVE_VALUE & mouseDownLeft & DRAW & Y>TOP_MARGIN
-			} // mouseDownLeft & DRAW & Y>TOP_MARGIN
+				} // MOVE_VALUE & mouseDownLeft & DRAW & within edit area
+			} // mouseDownLeft & DRAW & within edit area
 
-			// DRAW & mouseDownRight & not m_mouseDownLeft & Y>TOP_MARGIN
+			// DRAW & mouseDownRight & not m_mouseDownLeft & within edit area
 			else if(mouseEvent->buttons() & Qt::RightButton && !m_mouseDownLeft)
 			{
 				// removing automation point
@@ -909,16 +907,17 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 				removePoints(m_drawLastTick, pos_ticks);
 				Engine::getSong()->setModified();
 			}
-
-			else if (m_mouseDownLeft && m_mouseDownRight) // & DRAW & Y>TOP_MARGIN
+/*
+			else if (m_mouseDownLeft && m_mouseDownRight) // & DRAW & within edit area
 			{
 				// nothing happens
 			}
+*/
 		} // DRAW & Y>TOP_MARGIN
 
 
 		else if (m_editMode == SELECT && m_mouseDownLeft
-			&& m_action == SELECT_VALUES) // & Y>TOP_MARGIN
+			&& m_action == SELECT_VALUES) // & within edit area
 		{
 			// change size of selection
 			if(x < 0 && m_currentPosition > 0)
@@ -954,17 +953,19 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 
 			m_selectedLevels = mouseLevel - m_selectStartLevel;
 
-/*		// causing issue:
+/*
+			// BUG: this causes an issue:
 			//selection area automatically hit bottom
 			if(mouseLevel <= m_selectStartLevel)
 			{
 				--m_selectedLevels;
 			}
 */
-		} // SELECT_VALUES & mouseDownLeft & SELECT & Y>TOP_MARGIN
+
+		} // SELECT_VALUES & mouseDownLeft & SELECT & within edit area
 
 		else if (m_editMode == MOVE	&& m_mouseDownLeft
-			&& m_action == MOVE_SELECTION) // & Y>TOP_MARGIN
+			&& m_action == MOVE_SELECTION) // & within edit area
 		{
 			// move selection + selected values
 
@@ -1049,9 +1050,9 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 			m_selValuesForMove = new_selValuesForMove;
 			m_moveStartTick = pos_ticks;
 			m_moveStartLevel = mouseLevel;
-		} // MOVE_SELECTION & mouseDownLeft & MOVE & Y>TOP_MARGIN
+		} // MOVE_SELECTION & mouseDownLeft & MOVE & within edit area
 
-		else if (m_editMode == ERASE) // & Y>TOP_MARGIN
+		else if (m_editMode == ERASE) // & within edit area
 		{
 			if (m_mouseDownLeft && !m_mouseDownRight)
 			{
@@ -1059,17 +1060,19 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 				removePoints(m_drawLastTick, pos_ticks);
 				Engine::getSong()->setModified();
 			}
+/*
 			else if (m_mouseDownRight && !m_mouseDownLeft)
 			{
 				// nothing happens
 			}
-		} // ERASE & Y>TOP_MARGIN
-	} // mouseEvent->y() is greater than TOP_MARGIN
+*/
+		} // ERASE & within edit area
+	} // within edit area
 
-	// is this in the right spot?
-	else // mouseEvent->y() is NOT greater than TOP_MARGIN
+	// if mouse cursor hits bottom of toolbar
+	else if (mouseEvent->y() <= TOP_MARGIN)
 	{
-		if(m_mouseDownLeft &&	m_editMode == SELECT && m_action == SELECT_VALUES)
+		if(m_mouseDownLeft &&	m_editMode == SELECT)
 		{
 			int x = mouseEvent->x() - VALUES_WIDTH;
 			if( x < 0 && m_currentPosition > 0 )
@@ -1100,33 +1103,49 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 				m_selectedTick = -m_selectStartTick;
 			}
 
-			// if cursor goes above or below screen, reset it at edge
-			if (mouseLevel <= m_bottomLevel)
+			// if cursor hits bottom of toolbar,
+			// while zoomed in, scroll with cursor
+			if (mouseLevel >= m_topLevel)
 			{
-				QCursor::setPos(mapToGlobal(QPoint(mouseEvent->x(), height()
-					- SCROLLBAR_SIZE)));
-				m_topBottomScroll->setValue(m_topBottomScroll->value() + 1);
-				mouseLevel = m_bottomLevel;
-			}
-			else if (mouseLevel >= m_topLevel)
-			{
-				QCursor::setPos(mapToGlobal(QPoint(mouseEvent->x(), TOP_MARGIN)));
+				QCursor::setPos(mapToGlobal(QPoint(mouseEvent->x(), TOP_MARGIN + 1)));
 				m_topBottomScroll->setValue(m_topBottomScroll->value() - 1);
 				mouseLevel = m_topLevel;
 			}
 
+			// sets select box height
 			m_selectedLevels = mouseLevel - m_selectStartLevel;
+
+			// Allows selection area to follow scrolling
 			if (mouseLevel <= m_selectStartLevel)
 			{
 				--m_selectedLevels;
 			}
-			if (mouseLevel >= m_selectStartLevel)
-			{
-				++m_selectedLevels;
-			}
 		}
 		QApplication::restoreOverrideCursor();
-	 } // mouseEvent->y() is NOT greater than TOP_MARGIN
+	} // mouseEvent->y() is NOT greater than TOP_MARGIN
+
+	// if mouse cursor hits top of bottom scroll bar
+	else if (mouseEvent->y() >= (height() - SCROLLBAR_SIZE))
+	{
+		if(m_editMode == SELECT && m_mouseDownLeft )
+		{
+			// if cursor hits top of scrollbar,
+			// while zoomed in, scroll with cursor
+			QCursor::setPos(mapToGlobal(QPoint(mouseEvent->x(), height()
+				- SCROLLBAR_SIZE)));
+			m_topBottomScroll->setValue(m_topBottomScroll->value() + 1);
+			mouseLevel = m_bottomLevel;
+		}
+
+		// sets select box height
+		m_selectedLevels = mouseLevel - m_selectStartLevel;
+
+		// Allows selection area to follow scrolling
+		if (mouseLevel >= m_selectStartLevel)
+		{
+			++m_selectedLevels;
+		}
+	}
 
 	update();
 }
