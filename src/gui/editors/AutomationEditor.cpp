@@ -72,7 +72,10 @@ QPixmap * AutomationEditor::s_toolXFlip = NULL;
 const QVector<double> AutomationEditor::m_zoomXLevels =
 		{ 0.125f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f, 8.0f };
 
-
+QAction * AutomationEditor::s_drawAction = NULL;
+QAction * AutomationEditor::s_eraseAction = NULL;
+QAction * AutomationEditor::s_selectAction = NULL;
+QAction * AutomationEditor::s_moveAction = NULL;
 
 AutomationEditor::AutomationEditor() :
 	QWidget(),
@@ -393,6 +396,10 @@ void AutomationEditor::keyPressEvent(QKeyEvent * ke )
 			break;
 
 		case Qt::Key_Escape:
+			if (m_editMode == SELECT)
+			{
+				removeSelection();
+			}
 			if (m_action == MOVE_VALUE)
 			{
 				m_pattern->setDragValue(
@@ -400,32 +407,45 @@ void AutomationEditor::keyPressEvent(QKeyEvent * ke )
 				m_pattern->applyDragValue();
 				m_action = NONE;
 			}
+			ke->accept();
 			break;
 
-			case Qt::Key_Delete:
-				deleteSelectedValues();
-				//ke->accept(); // what does this do?
-				break;
-
-		//TODO: m_selectButton and m_moveButton are broken.
-		/*case Qt::Key_A:
-			if( ke->modifiers() & Qt::ControlModifier )
+		case Qt::Key_Delete:
+			if (m_editMode == SELECT)
 			{
-				m_selectButton->setChecked( true );
-				selectAll();
-				update();
-				ke->accept();
+				deleteSelectedValues();
+				m_editMode = DRAW;
+				removeSelection();
+				s_selectAction->toggle();
+				s_drawAction->toggle();
 			}
+			ke->accept();
 			break;
-
-		case Qt::Key_Backspace:
 
 		case Qt::Key_Home:
 			m_timeLine->pos().setTicks( 0 );
 			m_timeLine->updatePosition();
 			ke->accept();
 			break;
+
+		case Qt::Key_A:
+			if( ke->modifiers() & Qt::ControlModifier )
+			{
+				m_editMode = SELECT;
+				//m_selectButton->setChecked( true );
+				selectAll();
+				update();
+				ke->accept();
+			}
+			break;
+
+
+		//TODO: m_selectButton and m_moveButton are broken.
+
+/*
+		case Qt::Key_Backspace:
 */
+
 		default:
 			break;
 	}
@@ -650,9 +670,8 @@ void AutomationEditor::mousePressEvent(QMouseEvent* mouseEvent)
 					// when clicking right in select-mode, we
 					// switch to move-mode
 					setEditMode(MOVE);
-					// the moveAction QAction is out of scope
-					// moveAction->setChecked(true);
-					// so how to switch the button?
+					s_selectAction->toggle();
+					s_moveAction->toggle();
 				}
 			} // SELECT & X>=VALUES_WIDTH & below toolbar
 
@@ -668,15 +687,18 @@ void AutomationEditor::mousePressEvent(QMouseEvent* mouseEvent)
 					m_action = MOVE_SELECTION;
 
 					Engine::getSong()->setModified();
+				}
 
-					if (m_mouseDownRight) // & mouseDownLeft & MOVE
-					{
-						// when clicking right in move-mode, we
-						// switch to draw-mode
-						setEditMode(DRAW);
-						// m_drawButton->setChecked( true );
-					}
-				} // mouseDownLeft & MOVE & X>=VALUES_WIDTH & below toolbar
+				if (m_mouseDownRight) // & mouseDownLeft & MOVE
+				{
+					// when clicking right in move-mode, we
+					// switch to draw-mode
+					setEditMode(DRAW);
+					removeSelection();
+					s_moveAction->toggle();
+					s_drawAction->toggle();
+					// m_drawButton->setChecked( true );
+				}
 			} // MOVE & X>=VALUES_WIDTH & below toolbar
 
 			else if (m_editMode == ERASE) // & X>=VALUES_WIDTH & below toolbar
@@ -2443,19 +2465,20 @@ AutomationEditorWindow::AutomationEditorWindow() :
 
 	ActionGroup* editModeGroup = new ActionGroup(this);
 
-	QAction* drawAction = editModeGroup->addAction(embed::getIconPixmap("edit_draw"), tr("Draw mode (Shift+D)"));
-	drawAction->setShortcut(Qt::SHIFT | Qt::Key_D);
-	drawAction->setChecked(true);
+	AutomationEditor::s_drawAction = editModeGroup->addAction(embed::getIconPixmap("edit_draw"), tr("Draw mode (Shift+D)"));
+	AutomationEditor::s_drawAction->setShortcut(Qt::SHIFT | Qt::Key_D);
+	AutomationEditor::s_drawAction->setChecked(true);
 
-	QAction* eraseAction = editModeGroup->addAction(embed::getIconPixmap("edit_erase"), tr("Erase mode (Shift+E)"));
-	eraseAction->setShortcut(Qt::SHIFT | Qt::Key_E);
+	AutomationEditor::s_eraseAction = editModeGroup->addAction(embed::getIconPixmap("edit_erase"), tr("Erase mode (Shift+E)"));
+	AutomationEditor::s_eraseAction->setShortcut(Qt::SHIFT | Qt::Key_E);
 
 //	TODO: m_selectButton and m_moveButton are broken.
-	QAction* selectAction = editModeGroup->addAction(embed::getIconPixmap("edit_select"), tr("Select mode (Shift+S)"));
-	selectAction->setShortcut(Qt::SHIFT | Qt::Key_S);
+	//QAction* selectAction = editModeGroup->addAction(embed::getIconPixmap("edit_select"), tr("Select mode (Shift+S)"));
+	AutomationEditor::s_selectAction = editModeGroup->addAction(embed::getIconPixmap("edit_select"), tr("Select mode (Shift+S)"));
+	AutomationEditor::s_selectAction->setShortcut(Qt::SHIFT | Qt::Key_S);
 
-	QAction* moveAction = editModeGroup->addAction(embed::getIconPixmap("edit_move"), tr("Move Selection mode (Shift+M)"));
-	moveAction->setShortcut(Qt::SHIFT | Qt::Key_M);
+	AutomationEditor::s_moveAction = editModeGroup->addAction(embed::getIconPixmap("edit_move"), tr("Move Selection mode (Shift+M)"));
+	AutomationEditor::s_moveAction->setShortcut(Qt::SHIFT | Qt::Key_M);
 /*
 	QAction* selectAction = editModeGroup->addAction(embed::getIconPixmap("edit_select"), tr("Select: Disabled"));
 	selectAction->setShortcut(Qt::SHIFT | Qt::Key_S);
@@ -2470,10 +2493,10 @@ AutomationEditorWindow::AutomationEditorWindow() :
 
 	connect(editModeGroup, SIGNAL(triggered(int)), m_editor, SLOT(setEditMode(int)));
 
-	editActionsToolBar->addAction(drawAction);
-	editActionsToolBar->addAction(eraseAction);
-	editActionsToolBar->addAction(selectAction);
-	editActionsToolBar->addAction(moveAction);
+	editActionsToolBar->addAction(AutomationEditor::s_drawAction);
+	editActionsToolBar->addAction(AutomationEditor::s_eraseAction);
+	editActionsToolBar->addAction(AutomationEditor::s_selectAction);
+	editActionsToolBar->addAction(AutomationEditor::s_moveAction);
 	editActionsToolBar->addAction(m_flipXAction);
 	editActionsToolBar->addAction(m_flipYAction);
 

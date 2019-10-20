@@ -193,6 +193,11 @@ private:
 	static QPixmap * s_toolYFlip;
 	static QPixmap * s_toolXFlip;
 
+	static QAction * s_drawAction;
+	static QAction * s_eraseAction;
+	static QAction * s_selectAction;
+	static QAction * s_moveAction;
+
 	ComboBoxModel m_zoomingXModel;
 	ComboBoxModel m_zoomingYModel;
 	ComboBoxModel m_quantizeModel;
