@@ -216,7 +216,7 @@ AutomationEditor::~AutomationEditor()
 
 
 
-void AutomationEditor::setCurrentPattern(AutomationPattern * new_pattern )
+void AutomationEditor::setCurrentPattern(AutomationPattern * new_pattern)
 {
 	if (m_pattern)
 	{
@@ -240,13 +240,10 @@ void AutomationEditor::setCurrentPattern(AutomationPattern * new_pattern )
 
 void AutomationEditor::saveSettings(QDomDocument & doc, QDomElement & dom_parent)
 {
-	MainWindow::saveWidgetState( parentWidget(), dom_parent );
+	MainWindow::saveWidgetState(parentWidget(), dom_parent);
 }
 
-
-
-
-void AutomationEditor::loadSettings( const QDomElement & dom_parent)
+void AutomationEditor::loadSettings(const QDomElement & dom_parent)
 {
 	MainWindow::restoreWidgetState(parentWidget(), dom_parent);
 }
@@ -258,49 +255,49 @@ void AutomationEditor::loadSettings( const QDomElement & dom_parent)
 QColor AutomationEditor::barLineColor() const
 { return m_barLineColor; }
 
-void AutomationEditor::setBarLineColor( const QColor & c )
+void AutomationEditor::setBarLineColor(const QColor & c)
 { m_barLineColor = c; }
 
 QColor AutomationEditor::beatLineColor() const
 { return m_beatLineColor; }
 
-void AutomationEditor::setBeatLineColor( const QColor & c )
+void AutomationEditor::setBeatLineColor(const QColor & c)
 { m_beatLineColor = c; }
 
 QColor AutomationEditor::lineColor() const
 { return m_lineColor; }
 
-void AutomationEditor::setLineColor( const QColor & c )
+void AutomationEditor::setLineColor(const QColor & c)
 { m_lineColor = c; }
 
 QBrush AutomationEditor::graphColor() const
 { return m_graphColor; }
 
-void AutomationEditor::setGraphColor( const QBrush & c )
+void AutomationEditor::setGraphColor(const QBrush & c)
 { m_graphColor = c; }
 
 QColor AutomationEditor::vertexColor() const
 { return m_vertexColor; }
 
-void AutomationEditor::setVertexColor( const QColor & c )
+void AutomationEditor::setVertexColor(const QColor & c)
 { m_vertexColor = c; }
 
 QBrush AutomationEditor::scaleColor() const
 { return m_scaleColor; }
 
-void AutomationEditor::setScaleColor( const QBrush & c )
+void AutomationEditor::setScaleColor(const QBrush & c)
 { m_scaleColor = c; }
 
 QColor AutomationEditor::crossColor() const
 { return m_crossColor; }
 
-void AutomationEditor::setCrossColor( const QColor & c )
+void AutomationEditor::setCrossColor(const QColor & c)
 { m_crossColor = c; }
 
 QColor AutomationEditor::backgroundShade() const
 { return m_backgroundShade; }
 
-void AutomationEditor::setBackgroundShade( const QColor & c )
+void AutomationEditor::setBackgroundShade(const QColor & c)
 { m_backgroundShade = c; }
 
 
@@ -308,15 +305,15 @@ void AutomationEditor::setBackgroundShade( const QColor & c )
 
 void AutomationEditor::updateAfterPatternChange()
 {
-	QMutexLocker m( &m_patternMutex );
+	QMutexLocker m(&m_patternMutex);
 
 	m_currentPosition = 0;
 
-	if( !validPattern() )
+	if(!validPattern())
 	{
 		m_minLevel = m_maxLevel = m_scrollLevel = 0;
 		m_step = 1;
-		resizeEvent( NULL );
+		resizeEvent(NULL);
 		return;
 	}
 
@@ -325,11 +322,11 @@ void AutomationEditor::updateAfterPatternChange()
 	m_step = m_pattern->firstObject()->step<float>();
 	m_scrollLevel = ( m_minLevel + m_maxLevel ) / 2;
 
-	m_tensionModel->setValue( m_pattern->getTension() );
+	m_tensionModel->setValue(m_pattern->getTension());
 
 	// resizeEvent() does the rest for us (scrolling, range-checking
 	// of levels and so on...)
-	resizeEvent( NULL );
+	resizeEvent(NULL);
 
 	update();
 }
@@ -341,9 +338,9 @@ void AutomationEditor::update()
 {
 	QWidget::update();
 
-	QMutexLocker m( &m_patternMutex );
+	QMutexLocker m(&m_patternMutex);
 	// Note detuning?
-	if( m_pattern && !m_pattern->getTrack() )
+	if(m_pattern && !m_pattern->getTrack())
 	{
 		gui->pianoRoll()->update();
 	}
@@ -354,6 +351,7 @@ void AutomationEditor::update()
 
 void AutomationEditor::removeSelection()
 {
+	// deselects area
 	m_selectStartTick = 0;
 	m_selectedTick = 0;
 	m_selectStartLevel = 0;
@@ -404,6 +402,11 @@ void AutomationEditor::keyPressEvent(QKeyEvent * ke )
 			}
 			break;
 
+			case Qt::Key_Delete:
+				deleteSelectedValues();
+				//ke->accept(); // what does this do?
+				break;
+
 		//TODO: m_selectButton and m_moveButton are broken.
 		/*case Qt::Key_A:
 			if( ke->modifiers() & Qt::ControlModifier )
@@ -416,17 +419,13 @@ void AutomationEditor::keyPressEvent(QKeyEvent * ke )
 			break;
 
 		case Qt::Key_Backspace:
-		case Qt::Key_Delete:
-			deleteSelectedValues();
-			ke->accept();
-			break;*/
 
 		case Qt::Key_Home:
 			m_timeLine->pos().setTicks( 0 );
 			m_timeLine->updatePosition();
 			ke->accept();
 			break;
-
+*/
 		default:
 			break;
 	}
