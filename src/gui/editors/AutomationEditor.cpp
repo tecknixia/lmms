@@ -124,83 +124,79 @@ AutomationEditor::AutomationEditor() :
 	connect(m_tensionModel, SIGNAL( dataChanged()),
 		this, SLOT(setTension()));
 
-	for( int i = 0; i < 7; ++i )
+	for(int i = 0; i < 7; ++i)
 	{
-		m_quantizeModel.addItem( "1/" + QString::number( 1 << i ) );
+		m_quantizeModel.addItem("1/" + QString::number(1 << i));
 	}
 	for( int i = 0; i < 5; ++i )
 	{
-		m_quantizeModel.addItem( "1/" +
-					QString::number( ( 1 << i ) * 3 ) );
+		m_quantizeModel.addItem("1/" +
+					QString::number((1 << i) * 3));
 	}
-	m_quantizeModel.addItem( "1/192" );
+	m_quantizeModel.addItem("1/192");
 
-	connect( &m_quantizeModel, SIGNAL(dataChanged() ),
-					this, SLOT( setQuantization() ) );
-	m_quantizeModel.setValue( m_quantizeModel.findText( "1/8" ) );
+	connect(&m_quantizeModel, SIGNAL(dataChanged()),
+					this, SLOT(setQuantization()));
+	m_quantizeModel.setValue(m_quantizeModel.findText("1/8"));
 
-	if( s_toolYFlip == NULL )
+	if(s_toolYFlip == NULL)
 	{
-		s_toolYFlip = new QPixmap( embed::getIconPixmap(
-							"flip_y" ) );
+		s_toolYFlip = new QPixmap(embed::getIconPixmap(
+			"flip_y"));
 	}
-	if( s_toolXFlip == NULL )
+	if(s_toolXFlip == NULL)
 	{
-		s_toolXFlip = new QPixmap( embed::getIconPixmap(
-							"flip_x" ) );
+		s_toolXFlip = new QPixmap(embed::getIconPixmap(
+							"flip_x"));
 	}
 
 	// add time-line
-	m_timeLine = new TimeLineWidget( VALUES_WIDTH, 0, m_ppt,
-				Engine::getSong()->getPlayPos(
-					Song::Mode_PlayAutomationPattern ),
-					m_currentPosition,
-					Song::Mode_PlayAutomationPattern, this );
-	connect( this, SIGNAL( positionChanged( const MidiTime & ) ),
-		m_timeLine, SLOT( updatePosition( const MidiTime & ) ) );
-	connect( m_timeLine, SIGNAL( positionChanged( const MidiTime & ) ),
-			this, SLOT( updatePosition( const MidiTime & ) ) );
+	m_timeLine = new TimeLineWidget(VALUES_WIDTH, 0, m_ppt,
+		Engine::getSong()->getPlayPos(
+			Song::Mode_PlayAutomationPattern),
+			m_currentPosition,
+			Song::Mode_PlayAutomationPattern, this);
+	connect(this, SIGNAL(positionChanged(const MidiTime &)),
+		m_timeLine, SLOT(updatePosition(const MidiTime &)));
+	connect(m_timeLine, SIGNAL( positionChanged( const MidiTime &)),
+			this, SLOT(updatePosition(const MidiTime &)));
 
 	removeSelection();
 
 	// init scrollbars
-	m_leftRightScroll = new QScrollBar( Qt::Horizontal, this );
-	m_leftRightScroll->setSingleStep( 1 );
-	connect( m_leftRightScroll, SIGNAL( valueChanged( int ) ), this,
-						SLOT( horScrolled( int ) ) );
+	m_leftRightScroll = new QScrollBar(Qt::Horizontal, this);
+	m_leftRightScroll->setSingleStep(1);
+	connect(m_leftRightScroll, SIGNAL(valueChanged(int)), this,
+		SLOT(horScrolled(int)));
 
-	m_topBottomScroll = new QScrollBar( Qt::Vertical, this );
-	m_topBottomScroll->setSingleStep( 1 );
-	m_topBottomScroll->setPageStep( 20 );
-	connect( m_topBottomScroll, SIGNAL( valueChanged( int ) ), this,
-						SLOT( verScrolled( int ) ) );
+	m_topBottomScroll = new QScrollBar(Qt::Vertical, this);
+	m_topBottomScroll->setSingleStep(1);
+	m_topBottomScroll->setPageStep(20);
+	connect(m_topBottomScroll, SIGNAL(valueChanged(int)), this,
+		SLOT(verScrolled(int)));
 
 	// init pixmaps
-	if( s_toolDraw == NULL )
+	if(s_toolDraw == NULL)
 	{
-		s_toolDraw = new QPixmap( embed::getIconPixmap(
-							"edit_draw" ) );
+		s_toolDraw = new QPixmap(embed::getIconPixmap("edit_draw"));
 	}
-	if( s_toolErase == NULL )
+	if(s_toolErase == NULL)
 	{
-		s_toolErase= new QPixmap( embed::getIconPixmap(
-							"edit_erase" ) );
+		s_toolErase= new QPixmap( embed::getIconPixmap("edit_erase"));
 	}
-	if( s_toolSelect == NULL )
+	if(s_toolSelect == NULL)
 	{
-		s_toolSelect = new QPixmap( embed::getIconPixmap(
-							"edit_select" ) );
+		s_toolSelect = new QPixmap(embed::getIconPixmap("edit_select"));
 	}
-	if( s_toolMove == NULL )
+	if(s_toolMove == NULL)
 	{
-		s_toolMove = new QPixmap( embed::getIconPixmap(
-							"edit_move" ) );
+		s_toolMove = new QPixmap(embed::getIconPixmap("edit_move"));
 	}
 
-	setCurrentPattern( NULL );
+	setCurrentPattern(NULL);
 
-	setMouseTracking( true );
-	setFocusPolicy( Qt::StrongFocus );
+	setMouseTracking(true);
+	setFocusPolicy(Qt::StrongFocus);
 	setFocus();
 }
 
@@ -551,7 +547,7 @@ void AutomationEditor::mousePressEvent(QMouseEvent* mouseEvent)
 			{
 				// and check whether the user clicked on an
 				// existing value
-				if ((it+1==time_map.end() || pos_ticks <= (it+1).key())
+				if ((it + 1 == time_map.end() || pos_ticks <= (it + 1).key())
 					&& (pos_ticks >= it.key() - MidiTime::ticksPerTact() * 12 / m_ppt)
 					&& (pos_ticks <= it.key() + MidiTime::ticksPerTact() * 12 / m_ppt)
 					&& (mouseLevel == it.value() || mouseEvent->button() == Qt::RightButton))
@@ -822,7 +818,7 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 		{
 			// and check whether the cursor is over an
 			// existing value
-			if ((it+1==time_map.end() ||	pos_ticks <= (it+1).key())
+			if ((it + 1 == time_map.end() || pos_ticks <= (it + 1).key())
 				&& pos_ticks >= (it.key() - MidiTime::ticksPerTact() * 12 / m_ppt)
 				&& pos_ticks <= (it.key() + MidiTime::ticksPerTact() * 12 / m_ppt)
 				&& mouseLevel > (it.value() - maxLvlFraction)
