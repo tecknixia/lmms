@@ -68,6 +68,11 @@ QPixmap * AutomationEditor::s_toolMove = NULL;
 QPixmap * AutomationEditor::s_toolYFlip = NULL;
 QPixmap * AutomationEditor::s_toolXFlip = NULL;
 
+QAction * AutomationEditor::s_drawAction = NULL;
+QAction * AutomationEditor::s_eraseAction = NULL;
+QAction * AutomationEditor::s_selectAction = NULL;
+QAction * AutomationEditor::s_moveAction = NULL;
+
 const QVector<double> AutomationEditor::m_zoomXLevels =
 		{ 0.125f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f, 8.0f };
 
@@ -368,7 +373,8 @@ void AutomationEditor::removeSelection()
 
 
 
-
+//TODO: m_selectButton and m_moveButton are broken.
+//m_selectButton->setChecked(true);
 void AutomationEditor::keyPressEvent(QKeyEvent * ke )
 {
 	switch( ke->key() )
@@ -401,6 +407,10 @@ void AutomationEditor::keyPressEvent(QKeyEvent * ke )
 			break;
 
 		case Qt::Key_Escape:
+			if (m_editMode == SELECT)
+			{
+			removeSelection();
+			}
 			if (m_action == MOVE_VALUE)
 			{
 				m_pattern->setDragValue(
@@ -408,30 +418,37 @@ void AutomationEditor::keyPressEvent(QKeyEvent * ke )
 				m_pattern->applyDragValue();
 				m_action = NONE;
 			}
+			ke->accept();
 			break;
 
-		//TODO: m_selectButton and m_moveButton are broken.
-		/*case Qt::Key_A:
+		case Qt::Key_Delete:
+			if (m_editMode == SELECT)
+			{
+				deleteSelectedValues();
+				m_editMode = DRAW;
+				removeSelection();
+				s_selectAction->toggle();
+				s_drawAction->toggle();
+			}
+			ke->accept();
+			break;
+
+		case Qt::Key_Home:
+			m_timeLine->pos().setTicks(0);
+			m_timeLine->updatePosition();
+			ke->accept();
+			break;
+
+		case Qt::Key_A:
 			if( ke->modifiers() & Qt::ControlModifier )
 			{
-				m_selectButton->setChecked( true );
 				selectAll();
 				update();
 				ke->accept();
 			}
 			break;
 
-		case Qt::Key_Backspace:
-		case Qt::Key_Delete:
-			deleteSelectedValues();
-			ke->accept();
-			break;*/
-
-		case Qt::Key_Home:
-			m_timeLine->pos().setTicks( 0 );
-			m_timeLine->updatePosition();
-			ke->accept();
-			break;
+		//case Qt::Key_Backspace:
 
 		default:
 			break;
@@ -654,7 +671,9 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 			{
 				// when clicking right in select-move, we
 				// switch to move-mode
-				//m_moveButton->setChecked( true );
+				setEditMode(MOVE);
+				s_selectAction->toggle();
+				s_moveAction->toggle();
 			}
 			else if( mouseEvent->button() == Qt::LeftButton &&
 							m_editMode == MOVE )
@@ -675,7 +694,10 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 			{
 				// when clicking right in select-move, we
 				// switch to draw-mode
-				//m_drawButton->setChecked( true );
+				setEditMode(DRAW);
+				removeSelection();
+				s_moveAction->toggle();
+				s_drawAction->toggle();
 			}
 
 			update();
@@ -2386,26 +2408,44 @@ AutomationEditorWindow::AutomationEditorWindow() :
 	DropToolBar *editActionsToolBar = addDropToolBarToTop(tr("Edit actions"));
 
 	ActionGroup* editModeGroup = new ActionGroup(this);
-	QAction* drawAction = editModeGroup->addAction(embed::getIconPixmap("edit_draw"), tr("Draw mode (Shift+D)"));
-	drawAction->setShortcut(Qt::SHIFT | Qt::Key_D);
-	drawAction->setChecked(true);
 
-	QAction* eraseAction = editModeGroup->addAction(embed::getIconPixmap("edit_erase"), tr("Erase mode (Shift+E)"));
-	eraseAction->setShortcut(Qt::SHIFT | Qt::Key_E);
+	AutomationEditor::s_drawAction = editModeGroup->
+		addAction(embed::getIconPixmap("edit_draw"),
+		tr("Draw mode (Shift+D)"));
+	AutomationEditor::s_drawAction->setShortcut(Qt::SHIFT | Qt::Key_D);
+	AutomationEditor::s_drawAction->setChecked(true);
 
-	m_flipYAction = new QAction(embed::getIconPixmap("flip_y"), tr("Flip vertically"), this);
-	m_flipXAction = new QAction(embed::getIconPixmap("flip_x"), tr("Flip horizontally"), this);
+	AutomationEditor::s_eraseAction = editModeGroup->
+		addAction(embed::getIconPixmap("edit_erase"),
+		tr("Erase mode (Shift+E)"));
+	AutomationEditor::s_eraseAction->setShortcut(Qt::SHIFT | Qt::Key_E);
 
-//	TODO: m_selectButton and m_moveButton are broken.
-//	m_selectButton = new QAction(embed::getIconPixmap("edit_select"), tr("Select mode (Shift+S)"), editModeGroup);
-//	m_moveButton = new QAction(embed::getIconPixmap("edit_move"), tr("Move selection mode (Shift+M)"), editModeGroup);
+	AutomationEditor::s_eraseAction = editModeGroup->
+		addAction(embed::getIconPixmap("edit_erase"),
+		tr("Erase mode (Shift+E)"));
+	AutomationEditor::s_eraseAction->setShortcut(Qt::SHIFT | Qt::Key_E);
+
+	AutomationEditor::s_selectAction = editModeGroup->
+		addAction(embed::getIconPixmap("edit_select"),
+		tr("Select mode (Shift+S)"));
+	AutomationEditor::s_selectAction->setShortcut(Qt::SHIFT | Qt::Key_S);
+
+	AutomationEditor::s_moveAction = editModeGroup->
+		addAction(embed::getIconPixmap("edit_move"),
+		tr("Move Selection mode (Shift+M)"));
+	AutomationEditor::s_moveAction->setShortcut(Qt::SHIFT | Qt::Key_M);
+
+	m_flipYAction = new QAction(embed::getIconPixmap("flip_y"),
+		tr("Flip vertically"), this);
+	m_flipXAction = new QAction(embed::getIconPixmap("flip_x"),
+		tr("Flip horizontally"), this);
 
 	connect(editModeGroup, SIGNAL(triggered(int)), m_editor, SLOT(setEditMode(int)));
 
-	editActionsToolBar->addAction(drawAction);
-	editActionsToolBar->addAction(eraseAction);
-//	editActionsToolBar->addAction(m_selectButton);
-//	editActionsToolBar->addAction(m_moveButton);
+	editActionsToolBar->addAction(AutomationEditor::s_drawAction);
+	editActionsToolBar->addAction(AutomationEditor::s_eraseAction);
+	editActionsToolBar->addAction(AutomationEditor::s_selectAction);
+	editActionsToolBar->addAction(AutomationEditor::s_moveAction);
 	editActionsToolBar->addAction(m_flipXAction);
 	editActionsToolBar->addAction(m_flipYAction);
 
@@ -2444,7 +2484,7 @@ AutomationEditorWindow::AutomationEditorWindow() :
 
 
 	// Copy paste buttons
-	/*DropToolBar *copyPasteActionsToolBar = addDropToolBarToTop(tr("Copy paste actions"));*/
+	DropToolBar *copyPasteActionsToolBar = addDropToolBarToTop(tr("Copy paste actions"));
 
 	QAction* cutAction = new QAction(embed::getIconPixmap("edit_cut"),
 					tr("Cut selected values (%1+X)").arg(UI_CTRL_KEY), this);
@@ -2462,14 +2502,14 @@ AutomationEditorWindow::AutomationEditorWindow() :
 	connect(pasteAction, SIGNAL(triggered()), m_editor, SLOT(pasteValues()));
 
 	//	Select is broken
-	//	copyPasteActionsToolBar->addAction( cutAction );
-	//	copyPasteActionsToolBar->addAction( copyAction );
-	//	copyPasteActionsToolBar->addAction( pasteAction );
+	copyPasteActionsToolBar->addAction(cutAction);
+	copyPasteActionsToolBar->addAction(copyAction);
+	copyPasteActionsToolBar->addAction(pasteAction);
 
 
 	// Not implemented.
-	//DropToolBar *timeLineToolBar = addDropToolBarToTop(tr("Timeline controls"));
-	//m_editor->m_timeLine->addToolButtons(timeLineToolBar);
+	DropToolBar *timeLineToolBar = addDropToolBarToTop(tr("Timeline controls"));
+	m_editor->m_timeLine->addToolButtons(timeLineToolBar);
 
 
 	addToolBarBreak();
