@@ -400,6 +400,16 @@ void AutomationEditor::keyPressEvent(QKeyEvent * ke )
 			ke->accept();
 			break;
 
+		case Qt::Key_Escape:
+			if (m_action == MOVE_VALUE)
+			{
+				m_pattern->setDragValue(
+					MidiTime(m_moveStartTick), m_moveStartLevel, true, false);
+				m_pattern->applyDragValue();
+				m_action = NONE;
+			}
+			break;
+
 		//TODO: m_selectButton and m_moveButton are broken.
 		/*case Qt::Key_A:
 			if( ke->modifiers() & Qt::ControlModifier )
