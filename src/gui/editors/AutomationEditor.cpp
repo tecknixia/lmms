@@ -669,7 +669,7 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 			else if( mouseEvent->button() == Qt::RightButton &&
 							m_editMode == SELECT )
 			{
-				// when clicking right in select-move, we
+				// when clicking right in select-mode, we
 				// switch to move-mode
 				setEditMode(MOVE);
 				s_selectAction->toggle();
@@ -790,9 +790,10 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 		return;
 	}
 
+	float level = getLevel( mouseEvent->y() );
+
 	if( mouseEvent->y() > TOP_MARGIN )
 	{
-		float level = getLevel( mouseEvent->y() );
 		float maxLvlFraction = m_pattern->firstObject()->maxValue<float>() * 0.05;
 		int x = mouseEvent->x();
 
@@ -947,10 +948,13 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 				m_selectedTick = -m_selectStartTick;
 			}
 			m_selectedLevels = level - m_selectStartLevel;
+
+			// causing bug?
 			if( level <= m_selectStartLevel )
 			{
 				--m_selectedLevels;
 			}
+
 		}
 		else if( mouseEvent->buttons() & Qt::LeftButton &&
 					m_editMode == MOVE &&
@@ -1065,7 +1069,7 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 			m_moveStartLevel = level;
 		}
 	}
-	else
+	else if (mouseEvent->y() <= TOP_MARGIN)
 	{
 		if( mouseEvent->buttons() & Qt::LeftButton &&
 					m_editMode == SELECT &&
@@ -1108,9 +1112,7 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 			{
 				m_selectedTick = -m_selectStartTick;
 			}
-
-			float level = getLevel( mouseEvent->y() );
-
+/*
 			if( level <= m_bottomLevel )
 			{
 				QCursor::setPos( mapToGlobal( QPoint( mouseEvent->x(),
@@ -1121,11 +1123,12 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 				level = m_bottomLevel;
 			}
 			else if( level >= m_topLevel )
+*/		if(level >= m_topLevel)
 			{
-				QCursor::setPos( mapToGlobal( QPoint( mouseEvent->x(),
-							TOP_MARGIN ) ) );
+				QCursor::setPos(mapToGlobal(QPoint(
+					mouseEvent->x(), TOP_MARGIN + 1)));
 				m_topBottomScroll->setValue(
-					m_topBottomScroll->value() - 1 );
+					m_topBottomScroll->value() - 1);
 				level = m_topLevel;
 			}
 			m_selectedLevels = level - m_selectStartLevel;
@@ -1136,7 +1139,27 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 		}
 		QApplication::restoreOverrideCursor();
 	}
+	else if (mouseEvent->y() >= (height() - SCROLLBAR_SIZE))
+	{
+		if(m_editMode == SELECT && m_mouseDownLeft )
+		{
+			// if cursor hits top of scrollbar,
+			// while zoomed in, scroll with cursor
+			QCursor::setPos(mapToGlobal(QPoint(
+				mouseEvent->x(), height() - SCROLLBAR_SIZE)));
+			m_topBottomScroll->setValue(m_topBottomScroll->value() + 1);
+			level = m_bottomLevel;
+		}
 
+		// sets select box height
+		m_selectedLevels = level - m_selectStartLevel;
+
+		// Allows selection area to follow scrolling
+		if (level >= m_selectStartLevel)
+		{
+			++m_selectedLevels;
+		}
+	}
 	update();
 }
 
@@ -1544,8 +1567,9 @@ void AutomationEditor::paintEvent(QPaintEvent * pe )
 								* m_y_delta );
 		h = (int)( ( selLevel_start - selLevel_end ) * m_y_delta );
 	}
-	p.setPen( QColor( 0, 64, 192 ) );
-	p.drawRect( x + VALUES_WIDTH, y, w, h );
+	//p.setPen( QColor( 0, 64, 192 ) );
+	//p.drawRect( x + VALUES_WIDTH, y, w, h );
+	p.fillRect(x + VALUES_WIDTH, y, w, h, QColor(208, 115, 254, 48));
 
 	// TODO: Get this out of paint event
 	int l = validPattern() ? (int) m_pattern->length() : 0;
@@ -2414,11 +2438,6 @@ AutomationEditorWindow::AutomationEditorWindow() :
 		tr("Draw mode (Shift+D)"));
 	AutomationEditor::s_drawAction->setShortcut(Qt::SHIFT | Qt::Key_D);
 	AutomationEditor::s_drawAction->setChecked(true);
-
-	AutomationEditor::s_eraseAction = editModeGroup->
-		addAction(embed::getIconPixmap("edit_erase"),
-		tr("Erase mode (Shift+E)"));
-	AutomationEditor::s_eraseAction->setShortcut(Qt::SHIFT | Qt::Key_E);
 
 	AutomationEditor::s_eraseAction = editModeGroup->
 		addAction(embed::getIconPixmap("edit_erase"),
