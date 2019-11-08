@@ -122,6 +122,7 @@ protected:
 	void paintEvent(QPaintEvent * pe) override;
 	void resizeEvent(QResizeEvent * re) override;
 	void wheelEvent(QWheelEvent * we) override;
+	void mouseDoubleClickEvent(QMouseEvent * mouseEvent) override;
 
 	float getLevel( int y );
 	int xCoordOfTick( int tick );

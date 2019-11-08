@@ -1807,6 +1807,51 @@ void AutomationEditor::wheelEvent(QWheelEvent * we )
 
 
 
+void AutomationEditor::mouseDoubleClickEvent(QMouseEvent * mouseEvent)
+{
+	int x = mouseEvent->x();
+
+	if (x >= VALUES_WIDTH)
+	{
+		x -= VALUES_WIDTH;
+		float mouseLevel = getLevel(mouseEvent->y());
+		float maxLvlFraction = m_pattern->firstObject()->maxValue<float>() * 0.05;
+		int pos_ticks = x * MidiTime::ticksPerBar() / m_ppb + m_currentPosition;
+		timeMap & time_map = m_pattern->getTimeMap();
+		timeMap::iterator it = time_map.begin();
+
+		while (it != time_map.end())
+		{
+			// and check whether the cursor is over an
+			// existing value
+			if ((it+1==time_map.end() || pos_ticks <= (it+1).key())
+				&& (pos_ticks >= it.key() - MidiTime::ticksPerBar() * 12 / m_ppb)
+				&& (pos_ticks<= it.key() + MidiTime::ticksPerBar() * 12 / m_ppb)
+				&& (mouseLevel > it.value() - maxLvlFraction)
+				&& (mouseLevel < it.value() + maxLvlFraction))
+			{
+				// end of map or the cursor is on a point
+				break;
+			}
+			it++;
+		}
+
+		bool ok;
+		double d = QInputDialog::getDouble(this, tr("Edit Point"),
+	  	tr("New Y Value:"), m_pointYLevel, 0, m_pattern->firstObject()->maxValue<float>(), 3, &ok);
+
+		if (ok)
+		{
+			// move point to new position
+			m_pattern->setDragValue(MidiTime(pos_ticks), d, true, false);
+			m_pattern->applyDragValue();
+		}
+	}
+}
+
+
+
+
 float AutomationEditor::getLevel(int y )
 {
 	int level_line_y = height() - SCROLLBAR_SIZE - 1;
