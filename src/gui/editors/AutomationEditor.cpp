@@ -88,6 +88,8 @@ AutomationEditor::AutomationEditor() :
 	m_topLevel( 0 ),
 	m_currentPosition(),
 	m_action( NONE ),
+	m_dragStartLevel(0),
+	m_dragStartTick(0),
 	m_moveStartLevel( 0 ),
 	m_moveStartTick( 0 ),
 	m_drawLastLevel( 0.0f ),
@@ -540,7 +542,11 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 				++it;
 			}
 
+<<<<<<< 4a85ad0aca0fb87a53be86408dda54e5f55d0552
 			if (mouseEvent->button() == Qt::LeftButton)
+=======
+			if( mouseEvent->button() == Qt::LeftButton )
+>>>>>>> Automation point drag cancel with right click
 			{
 				m_mouseDownLeft = true;
 			}
@@ -554,6 +560,8 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 							m_editMode == DRAW )
 			{
 				m_pattern->addJournalCheckPoint();
+				m_dragStartLevel = level;
+				m_dragStartTick = pos_ticks;
 				// Connect the dots
 				if( mouseEvent->modifiers() & Qt::ShiftModifier )
 				{
@@ -597,17 +605,25 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 
 				Engine::getSong()->setModified();
 			}
-			else if( ( mouseEvent->button() == Qt::RightButton &&
-							m_editMode == DRAW ) ||
-					m_editMode == ERASE )
+			else if ((mouseEvent->button() == Qt::RightButton && m_editMode == DRAW)
+				|| m_editMode == ERASE)
 			{
-				m_drawLastTick = pos_ticks;
-				m_pattern->addJournalCheckPoint();
-				// erase single value
-				if( it != time_map.end() )
+				if (mouseEvent->buttons() & Qt::LeftButton && m_editMode == DRAW)
 				{
-					m_pattern->removeValue( it.key() );
-					Engine::getSong()->setModified();
+					m_pattern->setDragValue(MidiTime(m_dragStartTick), m_dragStartLevel,
+						true, false);
+					m_pattern->applyDragValue();
+				}
+				else
+				{
+					m_drawLastTick = pos_ticks;
+					m_pattern->addJournalCheckPoint();
+					// erase single value
+					if( it != time_map.end() )
+					{
+						m_pattern->removeValue( it.key() );
+						Engine::getSong()->setModified();
+					}
 				}
 				m_action = NONE;
 			}
@@ -676,6 +692,7 @@ void AutomationEditor::mouseReleaseEvent(QMouseEvent * mouseEvent )
 
 	if( mouseEvent->button() == Qt::LeftButton )
 	{
+		m_mouseDownLeft = false;
 		mustRepaint = true;
 	}
 
@@ -1506,7 +1523,7 @@ void AutomationEditor::paintEvent(QPaintEvent * pe )
 	switch( m_editMode )
 	{
 		case DRAW:
-			if( m_mouseDownRight )
+			if (m_mouseDownRight && !m_mouseDownLeft)
 			{
 				cursor = s_toolErase;
 			}
