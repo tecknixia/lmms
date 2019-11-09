@@ -373,8 +373,7 @@ void AutomationEditor::removeSelection()
 
 
 
-//TODO: m_selectButton and m_moveButton are broken.
-//m_selectButton->setChecked(true);
+
 void AutomationEditor::keyPressEvent(QKeyEvent * ke )
 {
 	switch( ke->key() )
@@ -570,11 +569,7 @@ void AutomationEditor::mousePressEvent( QMouseEvent* mouseEvent )
 				++it;
 			}
 
-<<<<<<< 4a85ad0aca0fb87a53be86408dda54e5f55d0552
 			if (mouseEvent->button() == Qt::LeftButton)
-=======
-			if( mouseEvent->button() == Qt::LeftButton )
->>>>>>> Automation point drag cancel with right click
 			{
 				m_mouseDownLeft = true;
 			}
@@ -802,9 +797,10 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 		{
 			x -= m_moveXOffset;
 		}
-
 		int pos_ticks = x * MidiTime::ticksPerBar() / m_ppb +
 							m_currentPosition;
+
+		// m_mouseDownLeft used to disable drag after drawLine
 		if (m_mouseDownLeft && m_editMode == DRAW)
 		{
 			if( m_action == MOVE_VALUE )
@@ -949,7 +945,6 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 			}
 			m_selectedLevels = level - m_selectStartLevel;
 
-			// causing bug?
 			if( level <= m_selectStartLevel )
 			{
 				--m_selectedLevels;
@@ -1112,7 +1107,7 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 			{
 				m_selectedTick = -m_selectStartTick;
 			}
-/*
+
 			if( level <= m_bottomLevel )
 			{
 				QCursor::setPos( mapToGlobal( QPoint( mouseEvent->x(),
@@ -1123,7 +1118,6 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 				level = m_bottomLevel;
 			}
 			else if( level >= m_topLevel )
-*/		if(level >= m_topLevel)
 			{
 				QCursor::setPos(mapToGlobal(QPoint(
 					mouseEvent->x(), TOP_MARGIN + 1)));
