@@ -776,7 +776,7 @@ void AutomationEditor::removePoints( int x0, int x1 )
 
 
 
-void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
+void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 {
 	QMutexLocker m( &m_patternMutex );
 	if( !validPattern() )
@@ -785,73 +785,29 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 		return;
 	}
 
-	float level = getLevel( mouseEvent->y() );
+	float level = getLevel(mouseEvent->y());
+	int x = mouseEvent->x();
+	x -= VALUES_WIDTH;
+	int pos_ticks = x * MidiTime::ticksPerBar() / m_ppb + m_currentPosition;
+	pos_ticks = (pos_ticks < 0) ? 0 : pos_ticks;
 
-	if( mouseEvent->y() > TOP_MARGIN )
-	{ // if mouse cursor is below toolbar
+	if (mouseEvent->y() > TOP_MARGIN
+		&& mouseEvent->y() < (height() - SCROLLBAR_SIZE))
+	{ // mouse cursor is below toolbar and above bottom scrollbar
 		float maxLvlFraction = m_pattern->firstObject()->maxValue<float>() * 0.05;
-		int x = mouseEvent->x();
 
-		x -= VALUES_WIDTH;
-		if( m_action == MOVE_VALUE )
-		{
-			x -= m_moveXOffset;
-		}
-		int pos_ticks = x * MidiTime::ticksPerBar() / m_ppb +
-							m_currentPosition;
+		if (m_action == MOVE_VALUE)	{ x -= m_moveXOffset; }
 
-		// m_mouseDownLeft used to disable drag after drawLine
-		if (m_mouseDownLeft && m_editMode == DRAW)
-		{
-			if( m_action == MOVE_VALUE )
-			{
-				// moving value
-				if( pos_ticks < 0 )
-				{
-					pos_ticks = 0;
-				}
-
-				drawLine( m_drawLastTick, m_drawLastLevel,
-							pos_ticks, level );
-
-				m_drawLastTick = pos_ticks;
-				m_drawLastLevel = level;
-
-				// we moved the value so the value has to be
-				// moved properly according to new starting-
-				// time in the time map of pattern
-				m_pattern->setDragValue( MidiTime( pos_ticks ),
-								level, true,
-							mouseEvent->modifiers() &
-								Qt::ControlModifier );
-			}
-
-			Engine::getSong()->setModified();
-
-		}
-		else if( ( mouseEvent->buttons() & Qt::RightButton &&
-						m_editMode == DRAW ) ||
-				( mouseEvent->buttons() & Qt::LeftButton &&
-						m_editMode == ERASE ) )
-		{
-			// removing automation point
-			if( pos_ticks < 0 )
-			{
-				pos_ticks = 0;
-			}
-			removePoints( m_drawLastTick, pos_ticks );
-			Engine::getSong()->setModified();
-		}
 		if (m_editMode == DRAW)
 		{
-			// set move- or resize-cursor
-
+			pos_ticks = x * MidiTime::ticksPerBar() / m_ppb + m_currentPosition;
+			pos_ticks = (pos_ticks < 0) ? 0 : pos_ticks;
 			// get time map of current pattern
 			timeMap & time_map = m_pattern->getTimeMap();
-
 			// will be our iterator in the following loop
 			timeMap::iterator it = time_map.begin();
 			// loop through whole time map...
+
 			for( ; it != time_map.end(); ++it )
 			{
 				// and check whether the cursor is over an
@@ -903,6 +859,38 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 				if (it == time_map.end()) { m_pointYLevel = 0; }
 			}
 		}
+
+		// m_mouseDownLeft used to disable drag after drawLine
+		if (m_mouseDownLeft && m_editMode == DRAW)
+		{
+			if (m_action == MOVE_VALUE)
+			{
+				pos_ticks = x * MidiTime::ticksPerBar() / m_ppb + m_currentPosition;
+				pos_ticks = (pos_ticks < 0) ? 0 : pos_ticks;
+
+				drawLine(m_drawLastTick, m_drawLastLevel,	pos_ticks, level);
+
+				m_drawLastTick = pos_ticks;
+				m_drawLastLevel = level;
+
+				// we moved the value so the value has to be
+				// moved properly according to new starting-
+				// time in the time map of pattern
+				m_pattern->setDragValue(MidiTime(
+					pos_ticks), level, true,
+					mouseEvent->modifiers() & Qt::ControlModifier);
+			}
+			Engine::getSong()->setModified();
+		}
+
+		else if ((mouseEvent->buttons() & Qt::RightButton && m_editMode == DRAW)
+			|| (mouseEvent->buttons() & Qt::LeftButton && m_editMode == ERASE))
+		{
+			// removing automation point
+			removePoints(m_drawLastTick, pos_ticks);
+			Engine::getSong()->setModified();
+		}
+
 		else if( mouseEvent->buttons() & Qt::LeftButton &&
 						m_editMode == SELECT &&
 						m_action == SELECT_VALUES )
@@ -935,8 +923,7 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 			}
 
 			// get tick in which the cursor is posated
-			int pos_ticks = x * MidiTime::ticksPerBar() / m_ppb +
-							m_currentPosition;
+			pos_ticks = x * MidiTime::ticksPerBar() / m_ppb +	m_currentPosition;
 
 			m_selectedTick = pos_ticks - m_selectStartTick;
 			if( (int) m_selectStartTick + m_selectedTick < 0 )
@@ -951,6 +938,7 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 			}
 
 		}
+
 		else if( mouseEvent->buttons() & Qt::LeftButton &&
 					m_editMode == MOVE &&
 					m_action == MOVE_SELECTION )
@@ -985,7 +973,6 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 
 			int bar_diff = ticks_diff / MidiTime::ticksPerBar();
 			ticks_diff = ticks_diff % MidiTime::ticksPerBar();
-
 
 			// do vertical move-stuff
 			float level_diff = level - m_moveStartLevel;
@@ -1023,7 +1010,6 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 				}
 			}
 			m_selectStartLevel += level_diff;
-
 
 			timeMap new_selValuesForMove;
 			for( timeMap::iterator it = m_selValuesForMove.begin();
@@ -1072,69 +1058,13 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 				level = m_bottomLevel;
 			}
 		}
-
-		if (mouseEvent->y() >= (height() - SCROLLBAR_SIZE))
-		{
-			if (mouseEvent->buttons() & Qt::LeftButton
-				&& m_editMode == SELECT
-				&& m_action == SELECT_VALUES)
-			{
-				if (x < 0 && m_currentPosition > 0)
-				{
-					x = 0;
-					QCursor::setPos(mapToGlobal(QPoint(VALUES_WIDTH, mouseEvent->y())));
-					if (m_currentPosition >= 4)
-					{
-						m_leftRightScroll->setValue(m_currentPosition - 4);
-					}
-					else
-					{
-						m_leftRightScroll->setValue(0);
-					}
-				}
-				if (x > width() - VALUES_WIDTH)
-				{
-					x = width() - VALUES_WIDTH;
-					QCursor::setPos(mapToGlobal(QPoint(width(), mouseEvent->y())));
-					m_leftRightScroll->setValue(m_currentPosition + 4);
-				}
-
-				// get tick in which the cursor is posated
-				int pos_ticks = x * MidiTime::ticksPerBar()
-					/ m_ppb + m_currentPosition;
-
-				m_selectedTick = pos_ticks - m_selectStartTick;
-				if ((int) m_selectStartTick + m_selectedTick < 0)
-				{
-					m_selectedTick = -m_selectStartTick;
-				}
-				if (level <= m_bottomLevel)
-				{
-						// cursor scroll when hits bottom scrollbar
-					QCursor::setPos(mapToGlobal(QPoint(
-						mouseEvent->x(), height() - SCROLLBAR_SIZE)));
-					m_topBottomScroll->setValue(m_topBottomScroll->value() + 1);
-					level = m_bottomLevel;
-				}
-			}
-			// sets select box height
-			m_selectedLevels = level - m_selectStartLevel;
-			// Allows selection area to follow scrolling
-			if (level >= m_selectStartLevel)
-			{
-				++m_selectedLevels;
-			}
-		}
 	}
 	else if (mouseEvent->y() <= TOP_MARGIN)
-	{ // mouse cursor is below or on bottom edge of toolbar
+	{ // mouse cursor on bottom edge of toolbar or above
 		if( mouseEvent->buttons() & Qt::LeftButton &&
 					m_editMode == SELECT &&
 					m_action == SELECT_VALUES )
  		{
-
-			int x = mouseEvent->x() - VALUES_WIDTH;
-
 			if( x < 0 && m_currentPosition > 0 )
 			{
 				x = 0;
@@ -1185,6 +1115,58 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 			}
 		}
 		QApplication::restoreOverrideCursor();
+	}
+	else if (mouseEvent->y() >= (height() - SCROLLBAR_SIZE))
+	{ // mouse cursor is on or below bottom scrollbar
+		if (mouseEvent->buttons() & Qt::LeftButton
+			&& m_editMode == SELECT
+			&& m_action == SELECT_VALUES)
+		{
+			if (x < 0 && m_currentPosition > 0)
+			{
+				x = 0;
+				QCursor::setPos(mapToGlobal(QPoint(VALUES_WIDTH, mouseEvent->y())));
+				if (m_currentPosition >= 4)
+				{
+					m_leftRightScroll->setValue(m_currentPosition - 4);
+				}
+				else
+				{
+					m_leftRightScroll->setValue(0);
+				}
+			}
+			if (x > width() - VALUES_WIDTH)
+			{
+				x = width() - VALUES_WIDTH;
+				QCursor::setPos(mapToGlobal(QPoint(width(), mouseEvent->y())));
+				m_leftRightScroll->setValue(m_currentPosition + 4);
+			}
+
+			// get tick in which the cursor is posated
+			int pos_ticks = x * MidiTime::ticksPerBar()
+				/ m_ppb + m_currentPosition;
+
+			m_selectedTick = pos_ticks - m_selectStartTick;
+			if ((int) m_selectStartTick + m_selectedTick < 0)
+			{
+				m_selectedTick = -m_selectStartTick;
+			}
+			if (level <= m_bottomLevel)
+			{
+					// cursor scroll when hits bottom scrollbar
+				QCursor::setPos(mapToGlobal(QPoint(
+					mouseEvent->x(), height() - SCROLLBAR_SIZE - 1)));
+				m_topBottomScroll->setValue(m_topBottomScroll->value() + 1);
+				level = m_bottomLevel;
+			}
+			// sets select box height
+			m_selectedLevels = level - m_selectStartLevel;
+			// Allows selection area to follow scrolling
+			if (level >= m_selectStartLevel)
+			{
+				++m_selectedLevels;
+			}
+		}
 	}
 	update();
 }
