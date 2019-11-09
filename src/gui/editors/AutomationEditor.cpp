@@ -788,7 +788,7 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 	float level = getLevel( mouseEvent->y() );
 
 	if( mouseEvent->y() > TOP_MARGIN )
-	{
+	{ // if mouse cursor is below toolbar
 		float maxLvlFraction = m_pattern->firstObject()->maxValue<float>() * 0.05;
 		int x = mouseEvent->x();
 
@@ -1062,22 +1062,85 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 
 			m_moveStartTick = pos_ticks;
 			m_moveStartLevel = level;
+
+			if (level <= m_bottomLevel)
+			{
+				QCursor::setPos(mapToGlobal(QPoint(
+					mouseEvent->x(), height() - SCROLLBAR_SIZE)));
+				m_topBottomScroll->setValue(
+					m_topBottomScroll->value() + 1 );
+				level = m_bottomLevel;
+			}
+		}
+
+		if (mouseEvent->y() >= (height() - SCROLLBAR_SIZE))
+		{
+			if (mouseEvent->buttons() & Qt::LeftButton
+				&& m_editMode == SELECT
+				&& m_action == SELECT_VALUES)
+			{
+				if (x < 0 && m_currentPosition > 0)
+				{
+					x = 0;
+					QCursor::setPos(mapToGlobal(QPoint(VALUES_WIDTH, mouseEvent->y())));
+					if (m_currentPosition >= 4)
+					{
+						m_leftRightScroll->setValue(m_currentPosition - 4);
+					}
+					else
+					{
+						m_leftRightScroll->setValue(0);
+					}
+				}
+				if (x > width() - VALUES_WIDTH)
+				{
+					x = width() - VALUES_WIDTH;
+					QCursor::setPos(mapToGlobal(QPoint(width(), mouseEvent->y())));
+					m_leftRightScroll->setValue(m_currentPosition + 4);
+				}
+
+				// get tick in which the cursor is posated
+				int pos_ticks = x * MidiTime::ticksPerBar()
+					/ m_ppb + m_currentPosition;
+
+				m_selectedTick = pos_ticks - m_selectStartTick;
+				if ((int) m_selectStartTick + m_selectedTick < 0)
+				{
+					m_selectedTick = -m_selectStartTick;
+				}
+				if (level <= m_bottomLevel)
+				{
+						// cursor scroll when hits bottom scrollbar
+					QCursor::setPos(mapToGlobal(QPoint(
+						mouseEvent->x(), height() - SCROLLBAR_SIZE)));
+					m_topBottomScroll->setValue(m_topBottomScroll->value() + 1);
+					level = m_bottomLevel;
+				}
+			}
+			// sets select box height
+			m_selectedLevels = level - m_selectStartLevel;
+			// Allows selection area to follow scrolling
+			if (level >= m_selectStartLevel)
+			{
+				++m_selectedLevels;
+			}
 		}
 	}
 	else if (mouseEvent->y() <= TOP_MARGIN)
-	{
+	{ // mouse cursor is below or on bottom edge of toolbar
 		if( mouseEvent->buttons() & Qt::LeftButton &&
 					m_editMode == SELECT &&
 					m_action == SELECT_VALUES )
-		{
+ 		{
 
 			int x = mouseEvent->x() - VALUES_WIDTH;
+
 			if( x < 0 && m_currentPosition > 0 )
 			{
 				x = 0;
 				QCursor::setPos( mapToGlobal( QPoint( VALUES_WIDTH,
 								mouseEvent->y() ) ) );
-				if( m_currentPosition >= 4 )
+				if (m_currentPosition >= 4)
 				{
 					m_leftRightScroll->setValue(
 							m_currentPosition - 4 );
@@ -1107,17 +1170,7 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 			{
 				m_selectedTick = -m_selectStartTick;
 			}
-
-			if( level <= m_bottomLevel )
-			{
-				QCursor::setPos( mapToGlobal( QPoint( mouseEvent->x(),
-							height() -
-							SCROLLBAR_SIZE ) ) );
-				m_topBottomScroll->setValue(
-					m_topBottomScroll->value() + 1 );
-				level = m_bottomLevel;
-			}
-			else if( level >= m_topLevel )
+			if (level >= m_topLevel)
 			{
 				QCursor::setPos(mapToGlobal(QPoint(
 					mouseEvent->x(), TOP_MARGIN + 1)));
@@ -1132,27 +1185,6 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent )
 			}
 		}
 		QApplication::restoreOverrideCursor();
-	}
-	else if (mouseEvent->y() >= (height() - SCROLLBAR_SIZE))
-	{
-		if(m_editMode == SELECT && m_mouseDownLeft )
-		{
-			// if cursor hits top of scrollbar,
-			// while zoomed in, scroll with cursor
-			QCursor::setPos(mapToGlobal(QPoint(
-				mouseEvent->x(), height() - SCROLLBAR_SIZE)));
-			m_topBottomScroll->setValue(m_topBottomScroll->value() + 1);
-			level = m_bottomLevel;
-		}
-
-		// sets select box height
-		m_selectedLevels = level - m_selectStartLevel;
-
-		// Allows selection area to follow scrolling
-		if (level >= m_selectStartLevel)
-		{
-			++m_selectedLevels;
-		}
 	}
 	update();
 }
