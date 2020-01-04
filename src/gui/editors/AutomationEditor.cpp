@@ -931,12 +931,6 @@ void AutomationEditor::mouseMoveEvent(QMouseEvent * mouseEvent)
 				m_selectedTick = -m_selectStartTick;
 			}
 			m_selectedLevels = level - m_selectStartLevel;
-
-			if( level <= m_selectStartLevel )
-			{
-				--m_selectedLevels;
-			}
-
 		}
 
 		else if( mouseEvent->buttons() & Qt::LeftButton &&
